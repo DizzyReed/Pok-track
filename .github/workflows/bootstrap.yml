@@ -1,0 +1,42 @@
+name: Bootstrap Poketrack project
+
+on:
+  push:
+    paths:
+      - 'project.b64'
+      - '.github/workflows/bootstrap.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  unpack:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Expand Android project
+        shell: bash
+        run: |
+          if [ ! -f project.b64 ]; then
+            echo "project.b64 already expanded"
+            exit 0
+          fi
+          base64 -d project.b64 > project.zip
+          unzip -o project.zip
+          rm -f project.zip project.b64
+
+      - name: Commit expanded project
+        shell: bash
+        run: |
+          if git diff --quiet && [ -z "$(git ls-files --others --exclude-standard)" ]; then
+            echo "Nothing to commit"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Expand Pokétrack Android project"
+          git push
